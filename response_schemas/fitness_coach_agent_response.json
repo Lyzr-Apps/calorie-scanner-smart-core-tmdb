@@ -1,0 +1,54 @@
+{
+  "agent_name": "Fitness Coach Agent",
+  "agent_id": "6999630b0fc64800c899bb91",
+  "description": "Reviews the user's accumulated daily meal log and fitness activity data (steps, calories burned) to provide real-time personalized insights, nutritional suggestions, caloric balance warnings, and motivational feedback. Supports conversational follow-up.",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "result": {
+      "overall_status": "string",
+      "caloric_balance": {
+        "consumed": "number",
+        "burned": "number",
+        "net": "number",
+        "daily_goal": "number",
+        "remaining": "number"
+      },
+      "insights": [
+        {
+          "type": "string",
+          "icon": "string",
+          "message": "string"
+        }
+      ],
+      "suggestions": [
+        "string"
+      ],
+      "motivational_message": "string"
+    }
+  },
+  "example_response": {
+    "result": {
+      "overall_status": "sample string",
+      "caloric_balance": {
+        "consumed": 0,
+        "burned": 0,
+        "net": 0,
+        "daily_goal": 0,
+        "remaining": 0
+      },
+      "insights": [
+        {
+          "type": "sample string",
+          "icon": "sample string",
+          "message": "sample string"
+        }
+      ],
+      "suggestions": [
+        "sample string"
+      ],
+      "motivational_message": "sample string"
+    }
+  }
+}

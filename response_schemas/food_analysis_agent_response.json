@@ -1,0 +1,68 @@
+{
+  "agent_name": "Food Analysis Agent",
+  "agent_id": "6999630a730bbd74d53e8abf",
+  "description": "Analyzes uploaded food photos using vision capabilities to identify food items, estimate portion sizes, calculate full nutritional breakdown (calories, macros, micronutrients), and categorize the meal type (breakfast, lunch, dinner, snack). Returns structured nutritional data.",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "result": {
+      "food_items": [
+        {
+          "name": "string",
+          "portion_size": "string",
+          "calories": "number",
+          "protein_g": "number",
+          "carbs_g": "number",
+          "fat_g": "number",
+          "fiber_g": "number",
+          "sugar_g": "number",
+          "sodium_mg": "number"
+        }
+      ],
+      "total_calories": "number",
+      "total_protein_g": "number",
+      "total_carbs_g": "number",
+      "total_fat_g": "number",
+      "total_fiber_g": "number",
+      "total_sugar_g": "number",
+      "total_sodium_mg": "number",
+      "meal_category": "string",
+      "summary": "string"
+    }
+  },
+  "example_response": {
+    "result": {
+      "food_items": [
+        {
+          "name": "sample string",
+          "portion_size": "sample string",
+          "calories": 0,
+          "protein_g": 0,
+          "carbs_g": 0,
+          "fat_g": 0,
+          "fiber_g": 0,
+          "sugar_g": 0,
+          "sodium_mg": 0
+        }
+      ],
+      "total_calories": 0,
+      "total_protein_g": 0,
+      "total_carbs_g": 0,
+      "total_fat_g": 0,
+      "total_fiber_g": 0,
+      "total_sugar_g": 0,
+      "total_sodium_mg": 0,
+      "meal_category": "sample string",
+      "summary": "sample string"
+    }
+  },
+  "has_module_outputs": true,
+  "module_outputs_example": {
+    "artifact_files": [
+      {
+        "file_url": "https://example.com/image.png"
+      }
+    ]
+  }
+}
