@@ -108,10 +108,14 @@ const DEFAULT_GOALS: Goals = {
 }
 
 // ──────── Sample Data ────────
-const SAMPLE_MEALS: MealEntry[] = [
+const SAMPLE_DATE_PLACEHOLDER = '@@TODAY@@'
+function getSampleMeals(today: string): MealEntry[] {
+  return SAMPLE_MEALS_TEMPLATE.map(m => ({ ...m, date: today || m.date }))
+}
+const SAMPLE_MEALS_TEMPLATE: MealEntry[] = [
   {
     id: 'sample-1',
-    date: new Date().toISOString().split('T')[0],
+    date: SAMPLE_DATE_PLACEHOLDER,
     time: '08:15',
     photoUrl: '',
     category: 'breakfast',
@@ -134,7 +138,7 @@ const SAMPLE_MEALS: MealEntry[] = [
   },
   {
     id: 'sample-2',
-    date: new Date().toISOString().split('T')[0],
+    date: SAMPLE_DATE_PLACEHOLDER,
     time: '12:30',
     photoUrl: '',
     category: 'lunch',
@@ -157,7 +161,7 @@ const SAMPLE_MEALS: MealEntry[] = [
   },
   {
     id: 'sample-3',
-    date: new Date().toISOString().split('T')[0],
+    date: SAMPLE_DATE_PLACEHOLDER,
     time: '16:00',
     photoUrl: '',
     category: 'snack',
@@ -184,8 +188,7 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 15)
 }
 
-function getGreeting(): string {
-  const hour = new Date().getHours()
+function getGreeting(hour: number): string {
   if (hour < 12) return 'Good morning'
   if (hour < 17) return 'Good afternoon'
   return 'Good evening'
@@ -337,7 +340,14 @@ function MealCard({ meal, onDelete }: { meal: MealEntry; onDelete: (id: string) 
 
 // ──────── Calendar Grid ────────
 function CalendarGrid({ selectedDate, onSelect, mealsByDate, calorieTarget }: { selectedDate: string; onSelect: (d: string) => void; mealsByDate: Record<string, MealEntry[]>; calorieTarget: number }) {
-  const [viewDate, setViewDate] = useState(() => new Date())
+  const [viewDate, setViewDate] = useState<Date | null>(null)
+  const [todayCalStr, setTodayCalStr] = useState('')
+  useEffect(() => {
+    const now = new Date()
+    setViewDate(now)
+    setTodayCalStr(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`)
+  }, [])
+  if (!viewDate) return <div className="h-64 flex items-center justify-center"><Skeleton className="w-full h-48" /></div>
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
   const firstDay = new Date(year, month, 1).getDay()
@@ -375,8 +385,7 @@ function CalendarGrid({ selectedDate, onSelect, mealsByDate, calorieTarget }: { 
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
           const isSelected = dateStr === selectedDate
           const dotColor = getDayColor(day)
-          const todayStr = new Date().toISOString().split('T')[0]
-          const isToday = dateStr === todayStr
+          const isToday = dateStr === todayCalStr
           return (
             <button key={dateStr} onClick={() => onSelect(dateStr)} className={`relative aspect-square flex flex-col items-center justify-center rounded-lg text-xs transition-all duration-150 ${isSelected ? 'bg-accent text-accent-foreground font-bold ring-2 ring-accent' : isToday ? 'bg-secondary font-semibold' : 'hover:bg-secondary/60'}`}>
               {day}
@@ -452,7 +461,7 @@ export default function Page() {
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
 
   // ──── History State ────
-  const [selectedHistoryDate, setSelectedHistoryDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [selectedHistoryDate, setSelectedHistoryDate] = useState('')
 
   // ──── Profile State ────
   const [profileForm, setProfileForm] = useState<Goals>(DEFAULT_GOALS)
@@ -462,10 +471,15 @@ export default function Page() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const chatScrollRef = useRef<HTMLDivElement>(null)
 
-  // ──── Date for display ────
+  // ──── Date for display (deferred to client to avoid hydration mismatch) ────
   const [currentDate, setCurrentDate] = useState('')
+  const [greeting, setGreeting] = useState('')
   useEffect(() => {
-    setCurrentDate(formatDate(new Date()))
+    const now = new Date()
+    setCurrentDate(formatDate(now))
+    setGreeting(getGreeting(now.getHours()))
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    setSelectedHistoryDate(todayIso)
   }, [])
 
   // ──── Load from localStorage ────
@@ -495,12 +509,14 @@ export default function Page() {
   useEffect(() => { try { localStorage.setItem(LS_STEPS, JSON.stringify(steps)) } catch (e) {} }, [steps])
 
   // ──── Computed ────
-  const todayStr = useMemo(() => {
+  const [todayStr, setTodayStr] = useState('')
+  useEffect(() => {
     const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    setTodayStr(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
   }, [])
 
-  const displayMeals = sampleMode ? SAMPLE_MEALS : meals
+  const sampleMeals = useMemo(() => getSampleMeals(todayStr), [todayStr])
+  const displayMeals = sampleMode ? sampleMeals : meals
   const todayMeals = useMemo(() => displayMeals.filter(m => m.date === todayStr), [displayMeals, todayStr])
   const todayCalories = useMemo(() => todayMeals.reduce((sum, m) => sum + (m.analysis?.total_calories ?? 0), 0), [todayMeals])
   const todayProtein = useMemo(() => todayMeals.reduce((sum, m) => sum + (m.analysis?.total_protein_g ?? 0), 0), [todayMeals])
@@ -737,7 +753,7 @@ export default function Page() {
           <div className="px-5 pt-6 pb-4">
             <div className="flex items-center justify-between mb-1">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">{getGreeting()}</h1>
+                <h1 className="text-2xl font-bold tracking-tight">{greeting || 'Welcome'}</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">{currentDate}</p>
               </div>
               <div className="flex items-center gap-2">
