@@ -271,13 +271,18 @@ function ProgressRing({ value, max, size = 56, strokeWidth = 5, color = 'hsl(160
 function MacroBar({ label, value, max, color, unit = 'g' }: { label: string; value: number; max: number; color: string; unit?: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">{Math.round(value)}{unit} / {Math.round(max)}{unit}</span>
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-center text-xs">
+        <span className="flex items-center gap-2 text-muted-foreground">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          {label}
+        </span>
+        <span className="font-semibold tabular-nums">{Math.round(value)}{unit} <span className="text-muted-foreground font-normal">/ {Math.round(max)}{unit}</span></span>
       </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${pct}%`, backgroundColor: color }} />
+      <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden" style={{ width: `${pct}%`, backgroundColor: color }}>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+        </div>
       </div>
     </div>
   )
@@ -285,15 +290,22 @@ function MacroBar({ label, value, max, color, unit = 'g' }: { label: string; val
 
 // ──────── Metric Tile ────────
 function MetricTile({ icon, label, value, target, unit, color }: { icon: React.ReactNode; label: string; value: number; target: number; unit: string; color: string }) {
+  const pct = target > 0 ? Math.min(Math.round((value / target) * 100), 999) : 0
   return (
-    <Card className="bg-card border border-border shadow-md relative overflow-hidden">
-      <CardContent className="p-3 flex flex-col items-center gap-1.5">
-        <div className="relative">
-          <ProgressRing value={value} max={target} size={52} strokeWidth={4} color={color} />
+    <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg relative overflow-hidden group hover:translate-y-[-1px] hover:shadow-xl transition-all duration-300 active:scale-[0.98]">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent" />
+      <CardContent className="p-4 flex items-center gap-3.5 relative">
+        <div className="relative flex-shrink-0">
+          <ProgressRing value={value} max={target} size={52} strokeWidth={4.5} color={color} />
           <div className="absolute inset-0 flex items-center justify-center">{icon}</div>
         </div>
-        <span className="text-lg font-bold tracking-tight">{Math.round(value).toLocaleString()}</span>
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-xl font-bold tracking-tight block">{Math.round(value).toLocaleString()}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</span>
+            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${color}15`, color }}>{pct}%</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
@@ -304,10 +316,11 @@ function MealCard({ meal, onDelete }: { meal: MealEntry; onDelete: (id: string) 
   const items = Array.isArray(meal.analysis?.food_items) ? meal.analysis.food_items : []
   const catColor = getCategoryColor(meal.category)
   return (
-    <Card className="bg-card border border-border shadow-md hover:shadow-lg transition-shadow duration-200">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+    <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-md hover:shadow-lg hover:translate-y-[-1px] transition-all duration-300 overflow-hidden relative group">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
+      <CardContent className="p-4 relative">
+        <div className="flex items-start gap-3.5">
+          <div className="w-16 h-16 rounded-xl bg-muted/80 flex items-center justify-center flex-shrink-0 overflow-hidden ring-1 ring-white/[0.06]">
             {meal.photoUrl ? (
               <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover rounded-xl" />
             ) : (
@@ -315,24 +328,26 @@ function MealCard({ meal, onDelete }: { meal: MealEntry; onDelete: (id: string) 
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${catColor}`}>
                   {getCategoryIcon(meal.category)}
                   <span className="ml-1 capitalize">{meal.category || 'meal'}</span>
                 </Badge>
-                <span className="text-xs text-muted-foreground flex items-center gap-1"><FiClock className="w-3 h-3" />{meal.time}</span>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1"><FiClock className="w-3 h-3" />{meal.time}</span>
               </div>
-              <button onClick={() => onDelete(meal.id)} className="p-1 rounded-md hover:bg-destructive/20 transition-colors">
+              <button onClick={() => onDelete(meal.id)} className="p-1.5 rounded-lg hover:bg-destructive/20 transition-colors opacity-0 group-hover:opacity-100">
                 <FiX className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
-            <p className="text-sm font-medium truncate">{items.map(i => i.name).join(', ') || 'Meal logged'}</p>
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><RiFireLine className="w-3.5 h-3.5 text-orange-400" /><span className="font-semibold text-foreground">{meal.analysis?.total_calories ?? 0}</span> cal</span>
-              <span>P: {Math.round(meal.analysis?.total_protein_g ?? 0)}g</span>
-              <span>C: {Math.round(meal.analysis?.total_carbs_g ?? 0)}g</span>
-              <span>F: {Math.round(meal.analysis?.total_fat_g ?? 0)}g</span>
+            <p className="text-sm font-semibold truncate mb-2">{items.map(i => i.name).join(', ') || 'Meal logged'}</p>
+            <div className="flex items-center gap-1">
+              <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-500/10 text-orange-400 text-[10px] font-semibold">
+                <RiFireLine className="w-3 h-3" />{meal.analysis?.total_calories ?? 0}
+              </span>
+              <span className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-medium">P {Math.round(meal.analysis?.total_protein_g ?? 0)}g</span>
+              <span className="px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-medium">C {Math.round(meal.analysis?.total_carbs_g ?? 0)}g</span>
+              <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-medium">F {Math.round(meal.analysis?.total_fat_g ?? 0)}g</span>
             </div>
           </div>
         </div>
@@ -344,32 +359,42 @@ function MealCard({ meal, onDelete }: { meal: MealEntry; onDelete: (id: string) 
 // ──────── Water Tracker ────────
 function WaterTracker({ glasses, goal, onAdd, onRemove }: { glasses: number; goal: number; onAdd: () => void; onRemove: () => void }) {
   const filled = Math.min(glasses, goal)
+  const pct = goal > 0 ? Math.round((filled / goal) * 100) : 0
+  const isComplete = filled >= goal
   return (
-    <Card className="bg-card border border-border shadow-md">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <FiDroplet className="w-4 h-4 text-blue-400" />
+    <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] to-transparent" />
+      <CardContent className="p-5 relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <FiDroplet className="w-4 h-4 text-blue-400" />
+            </div>
             <span className="text-sm font-semibold">Hydration</span>
           </div>
-          <span className="text-xs text-muted-foreground">{glasses} / {goal} glasses</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400">{pct}%</span>
+            <span className="text-xs text-muted-foreground">{glasses}/{goal}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 mb-3 flex-wrap">
+        <div className="flex items-center gap-1.5 mb-4 flex-wrap">
           {Array.from({ length: goal }).map((_, i) => (
-            <div key={i} className={`w-6 h-8 rounded-md border transition-all duration-300 flex items-center justify-center ${i < filled ? 'bg-blue-500/30 border-blue-500/50' : 'bg-muted/30 border-border'}`}>
-              <FiDroplet className={`w-3 h-3 transition-all duration-300 ${i < filled ? 'text-blue-400' : 'text-muted-foreground/30'}`} />
+            <div key={i} className={`w-7 h-9 rounded-lg border transition-all duration-300 flex items-center justify-center ${i < filled ? 'bg-blue-500/25 border-blue-500/40 shadow-sm shadow-blue-500/10' : 'bg-muted/20 border-white/[0.06]'}`}>
+              <FiDroplet className={`w-3.5 h-3.5 transition-all duration-300 ${i < filled ? 'text-blue-400' : 'text-muted-foreground/20'}`} />
             </div>
           ))}
         </div>
+        {isComplete && (
+          <div className="mb-3 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+            <p className="text-[11px] font-medium text-blue-300">Daily hydration goal reached</p>
+          </div>
+        )}
         <div className="flex items-center gap-2">
-          <Button onClick={onRemove} variant="outline" size="sm" disabled={glasses <= 0} className="h-8 w-8 p-0 border-border text-muted-foreground hover:text-foreground">
+          <Button onClick={onRemove} variant="outline" size="sm" disabled={glasses <= 0} className="h-9 w-9 p-0 border-white/[0.08] text-muted-foreground hover:text-foreground rounded-lg">
             <FiMinus className="w-3.5 h-3.5" />
           </Button>
-          <Button onClick={onAdd} variant="outline" size="sm" className="flex-1 h-8 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 font-medium text-xs">
-            <FiPlus className="w-3 h-3 mr-1" /> Add Glass (250ml)
-          </Button>
-          <Button onClick={onRemove} variant="ghost" size="sm" className="h-8 px-2 text-[10px] text-muted-foreground hover:text-foreground" disabled={glasses <= 0}>
-            Undo
+          <Button onClick={onAdd} variant="outline" size="sm" className="flex-1 h-9 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 font-medium text-xs rounded-lg">
+            <FiPlus className="w-3.5 h-3.5 mr-1.5" /> Add Glass (250ml)
           </Button>
         </div>
       </CardContent>
@@ -399,35 +424,46 @@ function WeeklyTrendChart({ mealsByDate, calorieTarget, todayStr }: { mealsByDat
   const maxVal = Math.max(calorieTarget, ...days.map(d => d.calories), 100)
 
   return (
-    <Card className="bg-card border border-border shadow-md">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <FiTrendingUp className="w-4 h-4 text-accent" />
-          <span className="text-sm font-semibold">Weekly Trend</span>
+    <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
+      <CardContent className="p-5 relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center">
+              <FiTrendingUp className="w-4 h-4 text-accent" />
+            </div>
+            <span className="text-sm font-semibold">Weekly Trend</span>
+          </div>
+          <span className="text-[9px] text-muted-foreground">{calorieTarget} cal goal</span>
         </div>
-        <div className="flex items-end gap-1.5 h-28">
+        <div className="flex items-end gap-2 h-32">
           {days.map((day, i) => {
             const height = maxVal > 0 ? (day.calories / maxVal) * 100 : 0
             const isToday = day.date === todayStr
             const overGoal = day.calories > calorieTarget
             return (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[9px] text-muted-foreground font-medium">{day.calories > 0 ? day.calories : ''}</span>
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                <span className="text-[9px] text-muted-foreground font-medium tabular-nums">{day.calories > 0 ? day.calories : ''}</span>
                 <div className="w-full flex-1 relative flex items-end">
                   <div
-                    className={`w-full rounded-t-md transition-all duration-500 ease-out ${overGoal ? 'bg-red-500/60' : isToday ? 'bg-accent' : 'bg-accent/40'}`}
-                    style={{ height: `${Math.max(height, day.calories > 0 ? 8 : 2)}%`, minHeight: day.calories > 0 ? '4px' : '2px' }}
-                  />
+                    className={`w-full rounded-lg transition-all duration-700 ease-out relative overflow-hidden ${overGoal ? 'bg-red-500/50' : isToday ? 'bg-accent' : 'bg-accent/30'}`}
+                    style={{ height: `${Math.max(height, day.calories > 0 ? 8 : 3)}%`, minHeight: day.calories > 0 ? '6px' : '3px' }}
+                  >
+                    {(isToday || overGoal) && <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/5" />}
+                  </div>
                 </div>
-                <span className={`text-[9px] font-medium ${isToday ? 'text-accent' : 'text-muted-foreground'}`}>{day.label}</span>
+                <div className="flex flex-col items-center">
+                  <span className={`text-[9px] font-semibold ${isToday ? 'text-accent' : 'text-muted-foreground'}`}>{day.label}</span>
+                  {isToday && <div className="w-1 h-1 rounded-full bg-accent mt-0.5" />}
+                </div>
               </div>
             )
           })}
         </div>
-        {/* Goal line label */}
-        <div className="flex items-center gap-2 mt-2">
-          <div className="h-px flex-1 bg-accent/30 border-t border-dashed border-accent/40" />
-          <span className="text-[9px] text-muted-foreground">Goal: {calorieTarget} cal</span>
+        <div className="flex items-center gap-2 mt-3">
+          <div className="h-px flex-1 border-t border-dashed border-accent/30" />
+          <span className="text-[9px] text-muted-foreground font-medium">daily target</span>
+          <div className="h-px flex-1 border-t border-dashed border-accent/30" />
         </div>
       </CardContent>
     </Card>
@@ -460,9 +496,10 @@ function StreakBadge({ mealsByDate, todayStr }: { mealsByDate: Record<string, Me
 
   if (streak <= 0) return null
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 shadow-sm">
       <FiAward className="w-3.5 h-3.5 text-amber-400" />
-      <span className="text-xs font-semibold text-amber-400">{streak} day streak</span>
+      <span className="text-xs font-bold text-amber-400 tabular-nums">{streak}</span>
+      <span className="text-[10px] text-amber-400/80">day streak</span>
     </div>
   )
 }
@@ -906,26 +943,34 @@ export default function Page() {
 
         {/* Status Toast */}
         {statusMessage && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2">
-            <FiCheck className="w-4 h-4" />
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm font-medium shadow-2xl shadow-emerald-500/10 backdrop-blur-xl flex items-center gap-2.5 animate-slide-down">
+            <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <FiCheck className="w-3 h-3" />
+            </div>
             {statusMessage}
           </div>
         )}
 
         {/* ═══════ Main Content ═══════ */}
-        <div className="flex-1 pb-20 overflow-y-auto">
+        <div className="flex-1 pb-24 overflow-y-auto scroll-smooth">
           {/* ──── Header ──── */}
-          <div className="px-5 pt-6 pb-4">
-            <div className="flex items-center justify-between mb-1">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">{greeting || 'Welcome'}</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">{currentDate}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <StreakBadge mealsByDate={mealsByDate} todayStr={todayStr} />
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="sample-toggle" className="text-xs text-muted-foreground">Demo</Label>
-                  <Switch id="sample-toggle" checked={sampleMode} onCheckedChange={setSampleMode} />
+          <div className="relative px-5 pt-8 pb-6 overflow-hidden">
+            {/* Decorative gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-blue-500/5" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="text-xs font-medium text-accent tracking-wide uppercase mb-1">NutriSnap</p>
+                  <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text">{greeting || 'Welcome'}</h1>
+                  <p className="text-sm text-muted-foreground mt-1">{currentDate}</p>
+                </div>
+                <div className="flex flex-col items-end gap-2 pt-1">
+                  <StreakBadge mealsByDate={mealsByDate} todayStr={todayStr} />
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="sample-toggle" className="text-[10px] text-muted-foreground uppercase tracking-wider">Demo</Label>
+                    <Switch id="sample-toggle" checked={sampleMode} onCheckedChange={setSampleMode} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -935,7 +980,7 @@ export default function Page() {
           {activeTab === 'dashboard' && (
             <div className="px-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               {/* Metric Tiles */}
-              <div className="grid grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 <MetricTile icon={<RiFireLine className="w-4 h-4 text-orange-400" />} label="Calories" value={todayCalories} target={goals.calorieTarget} unit="cal" color="hsl(25, 95%, 53%)" />
                 <MetricTile icon={<FiActivity className="w-4 h-4 text-rose-400" />} label="Burned" value={sampleMode ? 340 : 0} target={500} unit="cal" color="hsl(350, 80%, 55%)" />
                 <MetricTile icon={<FiTarget className="w-4 h-4 text-emerald-400" />} label="Net" value={todayCalories - (sampleMode ? 340 : 0)} target={goals.calorieTarget} unit="cal" color="hsl(160, 70%, 40%)" />
@@ -943,11 +988,13 @@ export default function Page() {
               </div>
 
               {/* Macro Progress */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <HiOutlineChartBar className="w-4 h-4 text-accent" />
-                    <span className="text-sm font-semibold">Macros</span>
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg hover:translate-y-[-1px] transition-all duration-300">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <HiOutlineChartBar className="w-4 h-4 text-accent" />
+                    </div>
+                    <span className="text-sm font-semibold">Macronutrients</span>
                   </div>
                   <MacroBar label="Protein" value={todayProtein} max={macroTargets.protein} color="hsl(160, 70%, 40%)" />
                   <MacroBar label="Carbs" value={todayCarbs} max={macroTargets.carbs} color="hsl(210, 80%, 55%)" />
@@ -969,20 +1016,26 @@ export default function Page() {
               {/* Today's Meals */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
-                    <MdOutlineLocalDining className="w-4.5 h-4.5 text-accent" />
+                  <h2 className="text-sm font-semibold tracking-tight flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <MdOutlineLocalDining className="w-4 h-4 text-accent" />
+                    </div>
                     Today&apos;s Meals
                   </h2>
-                  <span className="text-xs text-muted-foreground">{todayMeals.length} logged</span>
+                  <span className="text-[10px] text-muted-foreground font-medium px-2 py-0.5 rounded-md bg-muted/40">{todayMeals.length} logged</span>
                 </div>
                 {todayMeals.length === 0 ? (
-                  <Card className="bg-card border border-border shadow-md">
-                    <CardContent className="p-8 flex flex-col items-center justify-center text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                        <FiCamera className="w-7 h-7 text-muted-foreground" />
+                  <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.03] to-transparent" />
+                    <CardContent className="p-10 flex flex-col items-center justify-center text-center relative">
+                      <div className="w-20 h-20 rounded-2xl bg-accent/10 flex items-center justify-center mb-5 ring-1 ring-accent/20">
+                        <FiCamera className="w-8 h-8 text-accent/60" />
                       </div>
-                      <h3 className="text-sm font-semibold mb-1">No meals logged yet</h3>
-                      <p className="text-xs text-muted-foreground max-w-[220px]">Snap your first meal to get started tracking your nutrition</p>
+                      <h3 className="text-base font-semibold mb-1.5">No meals logged yet</h3>
+                      <p className="text-xs text-muted-foreground max-w-[240px] mb-5">Snap a photo of your meal to instantly get a nutritional breakdown</p>
+                      <Button onClick={() => fileInputRef.current?.click()} size="sm" className="bg-accent/15 text-accent hover:bg-accent/25 border border-accent/20 text-xs font-medium px-4 h-8 rounded-lg">
+                        <FiCamera className="w-3.5 h-3.5 mr-1.5" /> Take a Photo
+                      </Button>
                     </CardContent>
                   </Card>
                 ) : (
@@ -995,57 +1048,76 @@ export default function Page() {
               </div>
 
               {/* Quick Steps Input */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MdOutlineDirectionsWalk className="w-4 h-4 text-blue-400" />
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.02] to-transparent" />
+                <CardContent className="p-5 relative">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <MdOutlineDirectionsWalk className="w-4 h-4 text-blue-400" />
+                    </div>
                     <span className="text-sm font-semibold">Log Steps</span>
                   </div>
                   <div className="flex gap-2">
-                    <Input type="number" placeholder="Enter steps..." value={manualStepInput} onChange={(e) => setManualStepInput(e.target.value)} className="bg-muted border-border text-sm" />
-                    <Button onClick={handleAddSteps} variant="outline" size="sm" className="px-4 border-accent/30 text-accent hover:bg-accent/10">Add</Button>
+                    <Input type="number" placeholder="Enter steps..." value={manualStepInput} onChange={(e) => setManualStepInput(e.target.value)} className="bg-muted/60 border-white/[0.08] text-sm rounded-lg" />
+                    <Button onClick={handleAddSteps} variant="outline" size="sm" className="px-5 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 rounded-lg font-medium">Add</Button>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">Total today: {displaySteps.toLocaleString()} / {goals.stepGoal.toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground mt-2.5">Total today: <span className="font-semibold text-foreground">{displaySteps.toLocaleString()}</span> / {goals.stepGoal.toLocaleString()}</p>
                 </CardContent>
               </Card>
 
               {/* CTA Buttons */}
               <div className="grid grid-cols-2 gap-3">
-                <Button onClick={() => fileInputRef.current?.click()} className="h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg shadow-emerald-500/20 transition-all duration-200">
-                  <FiCamera className="w-4.5 h-4.5 mr-2" />
+                <Button onClick={() => fileInputRef.current?.click()} className="h-14 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-emerald-500/35 hover:translate-y-[-1px] active:scale-[0.98] rounded-xl text-sm">
+                  <FiCamera className="w-5 h-5 mr-2" />
                   Snap Meal
                 </Button>
-                <Button onClick={openCoach} variant="outline" className="h-12 border-accent/30 text-accent hover:bg-accent/10 font-semibold transition-all duration-200">
-                  <HiOutlineSparkles className="w-4.5 h-4.5 mr-2" />
+                <Button onClick={openCoach} variant="outline" className="h-14 border-accent/30 text-accent hover:bg-accent/10 font-semibold transition-all duration-300 hover:translate-y-[-1px] active:scale-[0.98] rounded-xl text-sm">
+                  <HiOutlineSparkles className="w-5 h-5 mr-2" />
                   Get Insights
                 </Button>
               </div>
 
               {/* Export Summary */}
               {todayMeals.length > 0 && (
-                <Button onClick={handleExportSummary} variant="outline" className="w-full h-10 border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200 text-xs">
+                <Button onClick={handleExportSummary} variant="outline" className="w-full h-11 border-white/[0.06] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all duration-200 text-xs rounded-xl">
                   {exportCopied ? <><FiCheck className="w-3.5 h-3.5 mr-2 text-accent" /> Copied to clipboard</> : <><FiCopy className="w-3.5 h-3.5 mr-2" /> Export Daily Summary</>}
                 </Button>
               )}
 
               {/* Agent Status */}
-              <Card className="bg-card border border-border shadow-md">
+              <Card className="bg-card/60 backdrop-blur-sm border border-white/[0.04] shadow-md">
                 <CardContent className="p-4">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">AI Agents</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FiImage className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-xs">Food Analysis (Gemini 2.5 Pro)</span>
+                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">AI Agents</h3>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                          <FiImage className="w-3 h-3 text-accent" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium block">Food Analysis</span>
+                          <span className="text-[9px] text-muted-foreground">Gemini 2.5 Pro</span>
+                        </div>
                       </div>
-                      <div className={`w-2 h-2 rounded-full ${activeAgentId === FOOD_AGENT_ID ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-muted-foreground">{activeAgentId === FOOD_AGENT_ID ? 'Active' : 'Ready'}</span>
+                        <div className={`w-2 h-2 rounded-full ${activeAgentId === FOOD_AGENT_ID ? 'bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50' : 'bg-muted-foreground/30'}`} />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FiActivity className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-xs">Fitness Coach (GPT-4.1)</span>
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                          <FiActivity className="w-3 h-3 text-accent" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium block">Fitness Coach</span>
+                          <span className="text-[9px] text-muted-foreground">GPT-4.1</span>
+                        </div>
                       </div>
-                      <div className={`w-2 h-2 rounded-full ${activeAgentId === COACH_AGENT_ID ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-muted-foreground">{activeAgentId === COACH_AGENT_ID ? 'Active' : 'Ready'}</span>
+                        <div className={`w-2 h-2 rounded-full ${activeAgentId === COACH_AGENT_ID ? 'bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50' : 'bg-muted-foreground/30'}`} />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1056,52 +1128,53 @@ export default function Page() {
           {/* ──── HISTORY TAB ──── */}
           {activeTab === 'history' && (
             <div className="px-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h2 className="text-lg font-bold tracking-tight">History</h2>
-              <Card className="bg-card border border-border shadow-md">
+              <h2 className="text-xl font-bold tracking-tight">History</h2>
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg">
                 <CardContent className="p-4">
                   <CalendarGrid selectedDate={selectedHistoryDate} onSelect={setSelectedHistoryDate} mealsByDate={mealsByDate} calorieTarget={goals.calorieTarget} />
                 </CardContent>
               </Card>
 
               {/* Selected Date Summary */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm font-semibold">
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg">
+                <CardHeader className="pb-2 pt-4 px-5">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <FiClock className="w-3.5 h-3.5 text-accent" />
                     {new Date(selectedHistoryDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
+                <CardContent className="px-5 pb-5">
                   {historyDateMeals.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-4 text-center">No meals logged on this day</p>
+                    <p className="text-xs text-muted-foreground py-6 text-center">No meals logged on this day</p>
                   ) : (
                     <div className="space-y-4">
                       {/* Summary Stats */}
                       <div className="grid grid-cols-4 gap-2 text-center">
-                        <div className="p-2 rounded-lg bg-muted">
-                          <p className="text-lg font-bold">{Math.round(historyDateCalories)}</p>
-                          <p className="text-[10px] text-muted-foreground">Calories</p>
+                        <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/15">
+                          <p className="text-lg font-bold text-orange-400 tabular-nums">{Math.round(historyDateCalories)}</p>
+                          <p className="text-[9px] text-muted-foreground font-semibold tracking-wider">CALORIES</p>
                         </div>
-                        <div className="p-2 rounded-lg bg-muted">
-                          <p className="text-lg font-bold">{Math.round(historyDateProtein)}</p>
-                          <p className="text-[10px] text-muted-foreground">Protein g</p>
+                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/15">
+                          <p className="text-lg font-bold text-emerald-400 tabular-nums">{Math.round(historyDateProtein)}</p>
+                          <p className="text-[9px] text-muted-foreground font-semibold tracking-wider">PROTEIN</p>
                         </div>
-                        <div className="p-2 rounded-lg bg-muted">
-                          <p className="text-lg font-bold">{Math.round(historyDateCarbs)}</p>
-                          <p className="text-[10px] text-muted-foreground">Carbs g</p>
+                        <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/15">
+                          <p className="text-lg font-bold text-blue-400 tabular-nums">{Math.round(historyDateCarbs)}</p>
+                          <p className="text-[9px] text-muted-foreground font-semibold tracking-wider">CARBS</p>
                         </div>
-                        <div className="p-2 rounded-lg bg-muted">
-                          <p className="text-lg font-bold">{Math.round(historyDateFat)}</p>
-                          <p className="text-[10px] text-muted-foreground">Fat g</p>
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/15">
+                          <p className="text-lg font-bold text-amber-400 tabular-nums">{Math.round(historyDateFat)}</p>
+                          <p className="text-[9px] text-muted-foreground font-semibold tracking-wider">FAT</p>
                         </div>
                       </div>
 
                       {/* Calorie Bar */}
                       <div>
-                        <div className="flex justify-between text-xs mb-1">
+                        <div className="flex justify-between text-xs mb-1.5">
                           <span className="text-muted-foreground">Calorie Progress</span>
-                          <span className="font-medium">{Math.round(historyDateCalories)} / {goals.calorieTarget}</span>
+                          <span className="font-semibold tabular-nums">{Math.round(historyDateCalories)} / {goals.calorieTarget}</span>
                         </div>
-                        <Progress value={Math.min((historyDateCalories / goals.calorieTarget) * 100, 100)} className="h-2" />
+                        <Progress value={Math.min((historyDateCalories / goals.calorieTarget) * 100, 100)} className="h-2.5" />
                       </div>
 
                       {/* Photo Gallery */}
@@ -1152,170 +1225,195 @@ export default function Page() {
           {/* ──── PROFILE TAB ──── */}
           {activeTab === 'profile' && (
             <div className="px-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h2 className="text-lg font-bold tracking-tight">Settings</h2>
+              <h2 className="text-xl font-bold tracking-tight">Settings</h2>
 
               {/* Calorie Target */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2"><FiTarget className="w-4 h-4 text-accent" /> Daily Calorie Target</CardTitle>
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg">
+                <CardHeader className="pb-2 pt-4 px-5">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-md bg-orange-500/10 flex items-center justify-center"><FiTarget className="w-3.5 h-3.5 text-orange-400" /></div>
+                    Daily Calorie Target
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <Input type="number" value={profileForm.calorieTarget} onChange={(e) => setProfileForm(prev => ({ ...prev, calorieTarget: parseInt(e.target.value) || 0 }))} className="bg-muted border-border text-lg font-semibold" />
-                  <p className="text-[10px] text-muted-foreground mt-1.5">Recommended: 1500-2500 calories per day</p>
+                <CardContent className="px-5 pb-5">
+                  <Input type="number" value={profileForm.calorieTarget} onChange={(e) => setProfileForm(prev => ({ ...prev, calorieTarget: parseInt(e.target.value) || 0 }))} className="bg-muted/50 border-white/[0.08] text-lg font-semibold rounded-lg" />
+                  <p className="text-[10px] text-muted-foreground mt-2">Recommended: 1500-2500 calories per day</p>
                 </CardContent>
               </Card>
 
               {/* Macro Split */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2"><HiOutlineChartBar className="w-4 h-4 text-accent" /> Macro Split</CardTitle>
-                  <CardDescription className="text-xs">Must add up to 100%</CardDescription>
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg">
+                <CardHeader className="pb-2 pt-4 px-5">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center"><HiOutlineChartBar className="w-3.5 h-3.5 text-accent" /></div>
+                    Macro Split
+                  </CardTitle>
+                  <CardDescription className="text-xs ml-8">Must add up to 100%</CardDescription>
                 </CardHeader>
-                <CardContent className="px-4 pb-4 space-y-3">
+                <CardContent className="px-5 pb-5 space-y-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Protein %</Label>
-                    <Input type="number" min={0} max={100} value={profileForm.proteinPct} onChange={(e) => setProfileForm(prev => ({ ...prev, proteinPct: parseInt(e.target.value) || 0 }))} className="bg-muted border-border mt-1" />
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Protein %</Label>
+                    <Input type="number" min={0} max={100} value={profileForm.proteinPct} onChange={(e) => setProfileForm(prev => ({ ...prev, proteinPct: parseInt(e.target.value) || 0 }))} className="bg-muted/50 border-white/[0.08] mt-1 rounded-lg" />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Carbs %</Label>
-                    <Input type="number" min={0} max={100} value={profileForm.carbsPct} onChange={(e) => setProfileForm(prev => ({ ...prev, carbsPct: parseInt(e.target.value) || 0 }))} className="bg-muted border-border mt-1" />
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Carbs %</Label>
+                    <Input type="number" min={0} max={100} value={profileForm.carbsPct} onChange={(e) => setProfileForm(prev => ({ ...prev, carbsPct: parseInt(e.target.value) || 0 }))} className="bg-muted/50 border-white/[0.08] mt-1 rounded-lg" />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Fat %</Label>
-                    <Input type="number" min={0} max={100} value={profileForm.fatPct} onChange={(e) => setProfileForm(prev => ({ ...prev, fatPct: parseInt(e.target.value) || 0 }))} className="bg-muted border-border mt-1" />
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Fat %</Label>
+                    <Input type="number" min={0} max={100} value={profileForm.fatPct} onChange={(e) => setProfileForm(prev => ({ ...prev, fatPct: parseInt(e.target.value) || 0 }))} className="bg-muted/50 border-white/[0.08] mt-1 rounded-lg" />
                   </div>
                   {(profileForm.proteinPct + profileForm.carbsPct + profileForm.fatPct) !== 100 && (
-                    <p className="text-xs text-amber-400 flex items-center gap-1"><FiAlertTriangle className="w-3 h-3" /> Total is {profileForm.proteinPct + profileForm.carbsPct + profileForm.fatPct}% (should be 100%)</p>
+                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+                      <FiAlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                      <p className="text-xs text-amber-400">Total is {profileForm.proteinPct + profileForm.carbsPct + profileForm.fatPct}% (should be 100%)</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Step Goal */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2"><MdOutlineDirectionsWalk className="w-4 h-4 text-blue-400" /> Daily Step Goal</CardTitle>
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg">
+                <CardHeader className="pb-2 pt-4 px-5">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center"><MdOutlineDirectionsWalk className="w-3.5 h-3.5 text-blue-400" /></div>
+                    Daily Step Goal
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <Input type="number" value={profileForm.stepGoal} onChange={(e) => setProfileForm(prev => ({ ...prev, stepGoal: parseInt(e.target.value) || 0 }))} className="bg-muted border-border text-lg font-semibold" />
+                <CardContent className="px-5 pb-5">
+                  <Input type="number" value={profileForm.stepGoal} onChange={(e) => setProfileForm(prev => ({ ...prev, stepGoal: parseInt(e.target.value) || 0 }))} className="bg-muted/50 border-white/[0.08] text-lg font-semibold rounded-lg" />
                 </CardContent>
               </Card>
 
               {/* Water Goal */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2"><FiDroplet className="w-4 h-4 text-blue-400" /> Daily Water Goal</CardTitle>
-                  <CardDescription className="text-xs">Number of glasses (250ml each)</CardDescription>
+              <Card className="bg-card/80 backdrop-blur-sm border border-white/[0.06] shadow-lg">
+                <CardHeader className="pb-2 pt-4 px-5">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center"><FiDroplet className="w-3.5 h-3.5 text-blue-400" /></div>
+                    Daily Water Goal
+                  </CardTitle>
+                  <CardDescription className="text-xs ml-8">Number of glasses (250ml each)</CardDescription>
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <Input type="number" min={1} max={20} value={profileForm.waterGoal} onChange={(e) => setProfileForm(prev => ({ ...prev, waterGoal: parseInt(e.target.value) || 8 }))} className="bg-muted border-border text-lg font-semibold" />
+                <CardContent className="px-5 pb-5">
+                  <Input type="number" min={1} max={20} value={profileForm.waterGoal} onChange={(e) => setProfileForm(prev => ({ ...prev, waterGoal: parseInt(e.target.value) || 8 }))} className="bg-muted/50 border-white/[0.08] text-lg font-semibold rounded-lg" />
                 </CardContent>
               </Card>
 
               {/* Save */}
-              <Button onClick={handleSaveProfile} className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg shadow-emerald-500/20">
+              <Button onClick={handleSaveProfile} className="w-full h-13 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg shadow-emerald-500/20 rounded-xl transition-all duration-300 hover:shadow-emerald-500/30 text-sm">
                 {profileSaved ? <><FiCheck className="w-4 h-4 mr-2" /> Saved!</> : 'Save Settings'}
               </Button>
 
-              {/* Reset Steps & Water */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">Reset Today&apos;s Steps</p>
-                      <p className="text-xs text-muted-foreground">Current: {steps.toLocaleString()}</p>
+              {/* Reset & Data Management */}
+              <div className="pt-2">
+                <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Data Management</h3>
+                <Card className="bg-card/60 backdrop-blur-sm border border-white/[0.04] shadow-md">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold">Reset Today&apos;s Steps</p>
+                        <p className="text-[10px] text-muted-foreground">Current: {steps.toLocaleString()}</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setSteps(0)} className="border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">Reset</Button>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setSteps(0)} className="border-destructive/30 text-red-400 hover:bg-destructive/10">Reset</Button>
-                  </div>
-                  <Separator className="bg-border" />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">Reset Today&apos;s Water</p>
-                      <p className="text-xs text-muted-foreground">Current: {waterGlasses} glasses</p>
+                    <Separator className="bg-white/[0.04]" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold">Reset Today&apos;s Water</p>
+                        <p className="text-[10px] text-muted-foreground">Current: {waterGlasses} glasses</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setWaterGlasses(0)} className="border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">Reset</Button>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setWaterGlasses(0)} className="border-destructive/30 text-red-400 hover:bg-destructive/10">Reset</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Clear All Data */}
-              <Card className="bg-card border border-border shadow-md">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">Clear All Meal Data</p>
-                      <p className="text-xs text-muted-foreground">{meals.length} meals stored</p>
+                    <Separator className="bg-white/[0.04]" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold">Clear All Meal Data</p>
+                        <p className="text-[10px] text-muted-foreground">{meals.length} meals stored</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => { setMeals([]); setChatMessages([]) }} className="border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">Clear</Button>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => { setMeals([]); setChatMessages([]) }} className="border-destructive/30 text-red-400 hover:bg-destructive/10">Clear</Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>
 
         {/* ═══════ Bottom Navigation ═══════ */}
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-40">
-          <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
-            <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
-              <RiFireLine className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Dashboard</span>
-            </button>
-            {/* Center FAB */}
-            <button onClick={() => fileInputRef.current?.click()} className="relative -mt-6 w-14 h-14 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-105 transition-all duration-200 active:scale-95">
-              <FiCamera className="w-6 h-6" />
-            </button>
-            <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-colors ${activeTab === 'history' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
-              <FiTrendingUp className="w-5 h-5" />
-              <span className="text-[10px] font-medium">History</span>
-            </button>
-            <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-colors ${activeTab === 'profile' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
-              <FiUser className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Profile</span>
-            </button>
+        <div className="fixed bottom-0 left-0 right-0 z-40">
+          <div className="absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+          <div className="bg-card/95 backdrop-blur-xl border-t border-white/[0.06]">
+            <div className="flex items-center justify-around h-18 max-w-lg mx-auto pb-[env(safe-area-inset-bottom)]">
+              <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition-all duration-200 ${activeTab === 'dashboard' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+                <RiFireLine className="w-5 h-5" />
+                <span className="text-[10px] font-semibold">Dashboard</span>
+                {activeTab === 'dashboard' && <div className="w-1 h-1 rounded-full bg-accent" />}
+              </button>
+              {/* Center FAB */}
+              <button onClick={() => fileInputRef.current?.click()} className="relative -mt-7 w-15 h-15 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-105 transition-all duration-300 active:scale-95 ring-4 ring-background">
+                <FiCamera className="w-6 h-6" />
+              </button>
+              <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition-all duration-200 ${activeTab === 'history' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+                <FiTrendingUp className="w-5 h-5" />
+                <span className="text-[10px] font-semibold">History</span>
+                {activeTab === 'history' && <div className="w-1 h-1 rounded-full bg-accent" />}
+              </button>
+              <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition-all duration-200 ${activeTab === 'profile' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+                <FiUser className="w-5 h-5" />
+                <span className="text-[10px] font-semibold">Settings</span>
+                {activeTab === 'profile' && <div className="w-1 h-1 rounded-full bg-accent" />}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* ═══════ Meal Analysis Dialog ═══════ */}
         <Dialog open={showAnalysisDialog} onOpenChange={setShowAnalysisDialog}>
-          <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="bg-card/95 backdrop-blur-xl border-white/[0.08] max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
             <DialogHeader>
-              <DialogTitle className="text-base font-semibold flex items-center gap-2"><FiCamera className="w-4 h-4 text-accent" /> Meal Analysis</DialogTitle>
+              <DialogTitle className="text-base font-semibold flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <FiCamera className="w-3.5 h-3.5 text-accent" />
+                </div>
+                Meal Analysis
+              </DialogTitle>
             </DialogHeader>
 
             {/* Photo Preview */}
             {selectedPhoto && (
-              <div className="rounded-xl overflow-hidden border border-border aspect-video bg-muted">
+              <div className="rounded-xl overflow-hidden border border-white/[0.06] aspect-video bg-muted shadow-inner">
                 <img src={selectedPhoto} alt="Captured meal" className="w-full h-full object-cover" />
               </div>
             )}
 
             {/* Loading State */}
             {analyzing && (
-              <div className="space-y-3 py-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  <span>Analyzing your meal...</span>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  <span className="font-medium">Analyzing your meal...</span>
                 </div>
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-20 w-full" />
-                <div className="grid grid-cols-3 gap-2">
-                  <Skeleton className="h-16" />
-                  <Skeleton className="h-16" />
-                  <Skeleton className="h-16" />
+                <Skeleton className="h-4 w-3/4 rounded-lg" />
+                <Skeleton className="h-4 w-1/2 rounded-lg" />
+                <Skeleton className="h-20 w-full rounded-xl" />
+                <div className="grid grid-cols-4 gap-2">
+                  <Skeleton className="h-16 rounded-xl" />
+                  <Skeleton className="h-16 rounded-xl" />
+                  <Skeleton className="h-16 rounded-xl" />
+                  <Skeleton className="h-16 rounded-xl" />
                 </div>
               </div>
             )}
 
             {/* Error State */}
             {analysisError && !analyzing && (
-              <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30">
+              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
                 <div className="flex items-center gap-2 mb-2">
                   <FiAlertTriangle className="w-4 h-4 text-red-400" />
-                  <span className="text-sm font-medium text-red-400">Analysis Failed</span>
+                  <span className="text-sm font-semibold text-red-400">Analysis Failed</span>
                 </div>
-                <p className="text-xs text-muted-foreground">{analysisError}</p>
-                <Button onClick={() => { if (selectedPhotoFile) analyzePhoto(selectedPhotoFile) }} variant="outline" size="sm" className="mt-3 border-accent/30 text-accent hover:bg-accent/10">
+                <p className="text-xs text-muted-foreground leading-relaxed">{analysisError}</p>
+                <Button onClick={() => { if (selectedPhotoFile) analyzePhoto(selectedPhotoFile) }} variant="outline" size="sm" className="mt-3 border-accent/30 text-accent hover:bg-accent/10 rounded-lg">
                   Try Again
                 </Button>
               </div>
@@ -1323,25 +1421,25 @@ export default function Page() {
 
             {/* Results */}
             {analysisResult && !analyzing && (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {/* Summary */}
                 {analysisResult.summary && (
-                  <div className="p-3 rounded-xl bg-accent/10 border border-accent/20">
-                    <p className="text-xs text-foreground">{analysisResult.summary}</p>
+                  <div className="p-3.5 rounded-xl bg-accent/8 border border-accent/15">
+                    <p className="text-xs text-foreground leading-relaxed">{analysisResult.summary}</p>
                   </div>
                 )}
 
                 {/* Food Items */}
                 <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Identified Items</h4>
+                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2.5">Identified Items</h4>
                   <div className="space-y-1.5">
                     {Array.isArray(analysisResult.food_items) && analysisResult.food_items.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50">
+                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-white/[0.04]">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{item.name ?? 'Unknown'}</p>
+                          <p className="text-sm font-semibold">{item.name ?? 'Unknown'}</p>
                           <p className="text-[10px] text-muted-foreground">{item.portion_size ?? ''}</p>
                         </div>
-                        <span className="text-sm font-semibold ml-2">{item.calories ?? 0} cal</span>
+                        <span className="text-sm font-bold ml-2 text-orange-400">{item.calories ?? 0} <span className="text-[10px] font-normal text-muted-foreground">cal</span></span>
                       </div>
                     ))}
                   </div>
@@ -1349,47 +1447,47 @@ export default function Page() {
 
                 {/* Nutritional Grid */}
                 <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nutrition Breakdown</h4>
+                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2.5">Nutrition Breakdown</h4>
                   <div className="grid grid-cols-4 gap-2">
-                    <div className="p-2 rounded-lg bg-muted text-center">
-                      <p className="text-lg font-bold">{analysisResult.total_calories ?? 0}</p>
-                      <p className="text-[9px] text-muted-foreground">CALORIES</p>
+                    <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/15 text-center">
+                      <p className="text-lg font-bold text-orange-400">{analysisResult.total_calories ?? 0}</p>
+                      <p className="text-[8px] text-muted-foreground font-semibold tracking-wider">CALORIES</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-muted text-center">
-                      <p className="text-lg font-bold">{Math.round(analysisResult.total_protein_g ?? 0)}</p>
-                      <p className="text-[9px] text-muted-foreground">PROTEIN g</p>
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/15 text-center">
+                      <p className="text-lg font-bold text-emerald-400">{Math.round(analysisResult.total_protein_g ?? 0)}</p>
+                      <p className="text-[8px] text-muted-foreground font-semibold tracking-wider">PROTEIN g</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-muted text-center">
-                      <p className="text-lg font-bold">{Math.round(analysisResult.total_carbs_g ?? 0)}</p>
-                      <p className="text-[9px] text-muted-foreground">CARBS g</p>
+                    <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/15 text-center">
+                      <p className="text-lg font-bold text-blue-400">{Math.round(analysisResult.total_carbs_g ?? 0)}</p>
+                      <p className="text-[8px] text-muted-foreground font-semibold tracking-wider">CARBS g</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-muted text-center">
-                      <p className="text-lg font-bold">{Math.round(analysisResult.total_fat_g ?? 0)}</p>
-                      <p className="text-[9px] text-muted-foreground">FAT g</p>
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/15 text-center">
+                      <p className="text-lg font-bold text-amber-400">{Math.round(analysisResult.total_fat_g ?? 0)}</p>
+                      <p className="text-[8px] text-muted-foreground font-semibold tracking-wider">FAT g</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mt-2">
-                    <div className="p-2 rounded-lg bg-muted text-center">
-                      <p className="text-sm font-semibold">{Math.round(analysisResult.total_fiber_g ?? 0)}g</p>
-                      <p className="text-[9px] text-muted-foreground">FIBER</p>
+                    <div className="p-2.5 rounded-xl bg-muted/50 border border-white/[0.04] text-center">
+                      <p className="text-sm font-bold">{Math.round(analysisResult.total_fiber_g ?? 0)}g</p>
+                      <p className="text-[8px] text-muted-foreground font-semibold tracking-wider">FIBER</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-muted text-center">
-                      <p className="text-sm font-semibold">{Math.round(analysisResult.total_sugar_g ?? 0)}g</p>
-                      <p className="text-[9px] text-muted-foreground">SUGAR</p>
+                    <div className="p-2.5 rounded-xl bg-muted/50 border border-white/[0.04] text-center">
+                      <p className="text-sm font-bold">{Math.round(analysisResult.total_sugar_g ?? 0)}g</p>
+                      <p className="text-[8px] text-muted-foreground font-semibold tracking-wider">SUGAR</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-muted text-center">
-                      <p className="text-sm font-semibold">{Math.round(analysisResult.total_sodium_mg ?? 0)}mg</p>
-                      <p className="text-[9px] text-muted-foreground">SODIUM</p>
+                    <div className="p-2.5 rounded-xl bg-muted/50 border border-white/[0.04] text-center">
+                      <p className="text-sm font-bold">{Math.round(analysisResult.total_sodium_mg ?? 0)}mg</p>
+                      <p className="text-[8px] text-muted-foreground font-semibold tracking-wider">SODIUM</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Category Selector */}
                 <div>
-                  <Label className="text-xs text-muted-foreground">Meal Category</Label>
-                  <div className="flex gap-2 mt-1.5">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Meal Category</Label>
+                  <div className="flex gap-2 mt-2">
                     {['breakfast', 'lunch', 'dinner', 'snack'].map(cat => (
-                      <button key={cat} onClick={() => setMealCategory(cat)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors border ${mealCategory === cat ? getCategoryColor(cat) + ' font-semibold' : 'border-border text-muted-foreground hover:text-foreground hover:border-border'}`}>
+                      <button key={cat} onClick={() => setMealCategory(cat)} className={`flex-1 px-2 py-2 rounded-xl text-xs font-medium capitalize transition-all duration-200 border ${mealCategory === cat ? getCategoryColor(cat) + ' font-semibold shadow-sm' : 'border-white/[0.06] text-muted-foreground hover:text-foreground hover:border-white/[0.1]'}`}>
                         {cat}
                       </button>
                     ))}
@@ -1397,7 +1495,7 @@ export default function Page() {
                 </div>
 
                 {/* Save Button */}
-                <Button onClick={handleSaveMeal} disabled={savingMeal} className="w-full h-11 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg shadow-emerald-500/20">
+                <Button onClick={handleSaveMeal} disabled={savingMeal} className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg shadow-emerald-500/20 rounded-xl transition-all duration-300 hover:shadow-emerald-500/30">
                   {savingMeal ? (
                     <><div className="w-4 h-4 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin mr-2" /> Saving...</>
                   ) : (
@@ -1411,39 +1509,43 @@ export default function Page() {
 
         {/* ═══════ Coach Dialog ═══════ */}
         <Dialog open={showCoachDialog} onOpenChange={setShowCoachDialog}>
-          <DialogContent className="bg-card border-border max-w-md h-[85vh] flex flex-col p-0">
-            <DialogHeader className="p-4 pb-2 border-b border-border flex-shrink-0">
-              <DialogTitle className="text-base font-semibold flex items-center gap-2">
-                <HiOutlineSparkles className="w-4 h-4 text-accent" /> Fitness Coach
+          <DialogContent className="bg-card/95 backdrop-blur-xl border-white/[0.08] max-w-md h-[85vh] flex flex-col p-0 rounded-2xl overflow-hidden">
+            <DialogHeader className="p-4 pb-3 border-b border-white/[0.06] flex-shrink-0 bg-gradient-to-r from-accent/5 to-transparent">
+              <DialogTitle className="text-base font-semibold flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                  <HiOutlineSparkles className="w-4 h-4 text-accent" />
+                </div>
+                Fitness Coach
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium ml-auto">AI-Powered</span>
               </DialogTitle>
             </DialogHeader>
 
             {/* Chat Messages */}
             <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
               {chatMessages.length === 0 && !chatLoading && (
-                <div className="text-center py-8">
-                  <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
-                    <HiOutlineSparkles className="w-6 h-6 text-accent" />
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4 ring-1 ring-accent/20">
+                    <HiOutlineSparkles className="w-7 h-7 text-accent" />
                   </div>
-                  <h3 className="text-sm font-semibold mb-1">Your AI Fitness Coach</h3>
-                  <p className="text-xs text-muted-foreground max-w-[240px] mx-auto">Ask about your nutrition, get personalized insights, or request meal suggestions.</p>
+                  <h3 className="text-sm font-semibold mb-1.5">Your AI Fitness Coach</h3>
+                  <p className="text-xs text-muted-foreground max-w-[260px] mx-auto leading-relaxed">Ask about your nutrition, get personalized insights, or request meal suggestions.</p>
                 </div>
               )}
 
               {chatMessages.map((msg, i) => (
                 <div key={i} className={`${msg.role === 'user' ? 'flex justify-end' : ''}`}>
                   {msg.role === 'user' ? (
-                    <div className="max-w-[85%] bg-accent text-accent-foreground rounded-2xl rounded-br-sm px-4 py-2.5">
-                      <p className="text-sm">{msg.content}</p>
+                    <div className="max-w-[85%] bg-accent text-accent-foreground rounded-2xl rounded-br-md px-4 py-3 shadow-sm">
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {/* Coach structured data */}
                       {msg.data && (
-                        <div className="space-y-2.5">
+                        <div className="space-y-3">
                           {/* Status Badge */}
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={`text-[10px] px-2.5 py-0.5 ${msg.data.overall_status === 'on_track' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : msg.data.overall_status === 'warning' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                            <Badge variant="outline" className={`text-[10px] px-2.5 py-1 rounded-lg ${msg.data.overall_status === 'on_track' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' : msg.data.overall_status === 'warning' ? 'bg-amber-500/15 text-amber-400 border-amber-500/25' : 'bg-red-500/15 text-red-400 border-red-500/25'}`}>
                               {msg.data.overall_status === 'on_track' ? <FiCheck className="w-3 h-3 mr-1" /> : <FiAlertTriangle className="w-3 h-3 mr-1" />}
                               {(msg.data.overall_status ?? '').replace('_', ' ').toUpperCase()}
                             </Badge>
@@ -1451,20 +1553,20 @@ export default function Page() {
 
                           {/* Caloric Balance */}
                           {msg.data.caloric_balance && (
-                            <Card className="bg-muted/50 border-border">
-                              <CardContent className="p-3">
-                                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                            <Card className="bg-muted/30 border-white/[0.06] rounded-xl overflow-hidden">
+                              <CardContent className="p-3.5">
+                                <div className="grid grid-cols-3 gap-3 text-center text-xs">
                                   <div>
-                                    <p className="font-bold text-base">{msg.data.caloric_balance.consumed ?? 0}</p>
-                                    <p className="text-muted-foreground">Consumed</p>
+                                    <p className="font-bold text-base tabular-nums">{msg.data.caloric_balance.consumed ?? 0}</p>
+                                    <p className="text-[10px] text-muted-foreground">Consumed</p>
                                   </div>
                                   <div>
-                                    <p className="font-bold text-base">{msg.data.caloric_balance.burned ?? 0}</p>
-                                    <p className="text-muted-foreground">Burned</p>
+                                    <p className="font-bold text-base tabular-nums">{msg.data.caloric_balance.burned ?? 0}</p>
+                                    <p className="text-[10px] text-muted-foreground">Burned</p>
                                   </div>
                                   <div>
-                                    <p className={`font-bold text-base ${(msg.data.caloric_balance.remaining ?? 0) > 0 ? 'text-emerald-400' : 'text-red-400'}`}>{msg.data.caloric_balance.remaining ?? 0}</p>
-                                    <p className="text-muted-foreground">Remaining</p>
+                                    <p className={`font-bold text-base tabular-nums ${(msg.data.caloric_balance.remaining ?? 0) > 0 ? 'text-emerald-400' : 'text-red-400'}`}>{msg.data.caloric_balance.remaining ?? 0}</p>
+                                    <p className="text-[10px] text-muted-foreground">Remaining</p>
                                   </div>
                                 </div>
                               </CardContent>
@@ -1525,19 +1627,19 @@ export default function Page() {
 
               {/* Loading indicator */}
               {chatLoading && (
-                <div className="flex items-center gap-2 p-3">
-                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs text-muted-foreground">Coach is thinking...</span>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+                  <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-muted-foreground font-medium">Coach is thinking...</span>
                 </div>
               )}
             </div>
 
             {/* Quick Actions */}
-            <div className="px-4 py-2 border-t border-border flex-shrink-0">
+            <div className="px-4 py-2.5 border-t border-white/[0.06] flex-shrink-0">
               <ScrollArea className="w-full">
                 <div className="flex gap-2 pb-1">
                   {['What should I eat next?', 'Am I on track?', 'Summarize my day'].map(chip => (
-                    <button key={chip} onClick={() => sendCoachMessage(chip)} disabled={chatLoading} className="whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-medium bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
+                    <button key={chip} onClick={() => sendCoachMessage(chip)} disabled={chatLoading} className="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-[11px] font-medium bg-muted/40 border border-white/[0.06] text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200 disabled:opacity-50">
                       {chip}
                     </button>
                   ))}
@@ -1546,10 +1648,10 @@ export default function Page() {
             </div>
 
             {/* Input */}
-            <div className="p-4 pt-2 flex-shrink-0">
+            <div className="p-4 pt-2 flex-shrink-0 bg-gradient-to-t from-card to-transparent">
               <div className="flex gap-2">
-                <Input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendCoachMessage(chatInput) } }} placeholder="Ask your coach..." className="bg-muted border-border text-sm flex-1" disabled={chatLoading} />
-                <Button onClick={() => sendCoachMessage(chatInput)} disabled={chatLoading || !chatInput.trim()} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 px-3">
+                <Input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendCoachMessage(chatInput) } }} placeholder="Ask your coach..." className="bg-muted/50 border-white/[0.08] text-sm flex-1 rounded-xl" disabled={chatLoading} />
+                <Button onClick={() => sendCoachMessage(chatInput)} disabled={chatLoading || !chatInput.trim()} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 px-3.5 rounded-xl shadow-sm shadow-emerald-500/20">
                   <FiSend className="w-4 h-4" />
                 </Button>
               </div>
