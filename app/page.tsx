@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { FiCamera, FiActivity, FiTrendingUp, FiUser, FiSend, FiCheck, FiAlertTriangle, FiInfo, FiTarget, FiClock, FiChevronLeft, FiChevronRight, FiX, FiHeart, FiImage } from 'react-icons/fi'
+import { FiCamera, FiActivity, FiTrendingUp, FiUser, FiSend, FiCheck, FiAlertTriangle, FiInfo, FiTarget, FiClock, FiChevronLeft, FiChevronRight, FiX, FiHeart, FiImage, FiCopy, FiDroplet, FiAward, FiMinus, FiPlus } from 'react-icons/fi'
 import { MdOutlineLocalDining, MdOutlineDirectionsWalk, MdRestaurant } from 'react-icons/md'
 import { HiOutlineSparkles, HiOutlineLightBulb, HiOutlineChartBar } from 'react-icons/hi'
 import { RiLeafLine, RiFireLine } from 'react-icons/ri'
@@ -25,6 +25,7 @@ const COACH_AGENT_ID = '6999630b0fc64800c899bb91'
 const LS_MEALS = 'nutrisnap_meals'
 const LS_GOALS = 'nutrisnap_goals'
 const LS_STEPS = 'nutrisnap_steps'
+const LS_WATER = 'nutrisnap_water'
 const LS_PROFILE = 'nutrisnap_profile'
 
 // ──────── Types ────────
@@ -97,6 +98,7 @@ interface Goals {
   carbsPct: number
   fatPct: number
   stepGoal: number
+  waterGoal: number
 }
 
 const DEFAULT_GOALS: Goals = {
@@ -105,6 +107,7 @@ const DEFAULT_GOALS: Goals = {
   carbsPct: 40,
   fatPct: 30,
   stepGoal: 10000,
+  waterGoal: 8,
 }
 
 // ──────── Sample Data ────────
@@ -338,6 +341,132 @@ function MealCard({ meal, onDelete }: { meal: MealEntry; onDelete: (id: string) 
   )
 }
 
+// ──────── Water Tracker ────────
+function WaterTracker({ glasses, goal, onAdd, onRemove }: { glasses: number; goal: number; onAdd: () => void; onRemove: () => void }) {
+  const filled = Math.min(glasses, goal)
+  return (
+    <Card className="bg-card border border-border shadow-md">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <FiDroplet className="w-4 h-4 text-blue-400" />
+            <span className="text-sm font-semibold">Hydration</span>
+          </div>
+          <span className="text-xs text-muted-foreground">{glasses} / {goal} glasses</span>
+        </div>
+        <div className="flex items-center gap-1 mb-3 flex-wrap">
+          {Array.from({ length: goal }).map((_, i) => (
+            <div key={i} className={`w-6 h-8 rounded-md border transition-all duration-300 flex items-center justify-center ${i < filled ? 'bg-blue-500/30 border-blue-500/50' : 'bg-muted/30 border-border'}`}>
+              <FiDroplet className={`w-3 h-3 transition-all duration-300 ${i < filled ? 'text-blue-400' : 'text-muted-foreground/30'}`} />
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={onRemove} variant="outline" size="sm" disabled={glasses <= 0} className="h-8 w-8 p-0 border-border text-muted-foreground hover:text-foreground">
+            <FiMinus className="w-3.5 h-3.5" />
+          </Button>
+          <Button onClick={onAdd} variant="outline" size="sm" className="flex-1 h-8 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 font-medium text-xs">
+            <FiPlus className="w-3 h-3 mr-1" /> Add Glass (250ml)
+          </Button>
+          <Button onClick={onRemove} variant="ghost" size="sm" className="h-8 px-2 text-[10px] text-muted-foreground hover:text-foreground" disabled={glasses <= 0}>
+            Undo
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ──────── Weekly Trend Chart ────────
+function WeeklyTrendChart({ mealsByDate, calorieTarget, todayStr }: { mealsByDate: Record<string, MealEntry[]>; calorieTarget: number; todayStr: string }) {
+  const [days, setDays] = useState<{ label: string; date: string; calories: number }[]>([])
+  useEffect(() => {
+    if (!todayStr) return
+    const result: { label: string; date: string; calories: number }[] = []
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const dayMeals = mealsByDate[dateStr] ?? []
+      const cals = dayMeals.reduce((sum, m) => sum + (m.analysis?.total_calories ?? 0), 0)
+      result.push({ label: dayLabels[d.getDay()], date: dateStr, calories: cals })
+    }
+    setDays(result)
+  }, [mealsByDate, todayStr])
+
+  if (days.length === 0) return null
+  const maxVal = Math.max(calorieTarget, ...days.map(d => d.calories), 100)
+
+  return (
+    <Card className="bg-card border border-border shadow-md">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <FiTrendingUp className="w-4 h-4 text-accent" />
+          <span className="text-sm font-semibold">Weekly Trend</span>
+        </div>
+        <div className="flex items-end gap-1.5 h-28">
+          {days.map((day, i) => {
+            const height = maxVal > 0 ? (day.calories / maxVal) * 100 : 0
+            const isToday = day.date === todayStr
+            const overGoal = day.calories > calorieTarget
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[9px] text-muted-foreground font-medium">{day.calories > 0 ? day.calories : ''}</span>
+                <div className="w-full flex-1 relative flex items-end">
+                  <div
+                    className={`w-full rounded-t-md transition-all duration-500 ease-out ${overGoal ? 'bg-red-500/60' : isToday ? 'bg-accent' : 'bg-accent/40'}`}
+                    style={{ height: `${Math.max(height, day.calories > 0 ? 8 : 2)}%`, minHeight: day.calories > 0 ? '4px' : '2px' }}
+                  />
+                </div>
+                <span className={`text-[9px] font-medium ${isToday ? 'text-accent' : 'text-muted-foreground'}`}>{day.label}</span>
+              </div>
+            )
+          })}
+        </div>
+        {/* Goal line label */}
+        <div className="flex items-center gap-2 mt-2">
+          <div className="h-px flex-1 bg-accent/30 border-t border-dashed border-accent/40" />
+          <span className="text-[9px] text-muted-foreground">Goal: {calorieTarget} cal</span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ──────── Streak Counter ────────
+function StreakBadge({ mealsByDate, todayStr }: { mealsByDate: Record<string, MealEntry[]>; todayStr: string }) {
+  const [streak, setStreak] = useState(0)
+  useEffect(() => {
+    if (!todayStr) return
+    let count = 0
+    const d = new Date()
+    for (let i = 0; i < 365; i++) {
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const hasMeals = Array.isArray(mealsByDate[dateStr]) && mealsByDate[dateStr].length > 0
+      if (hasMeals) {
+        count++
+        d.setDate(d.getDate() - 1)
+      } else if (i === 0) {
+        // Today might not have meals yet; check yesterday
+        d.setDate(d.getDate() - 1)
+        continue
+      } else {
+        break
+      }
+    }
+    setStreak(count)
+  }, [mealsByDate, todayStr])
+
+  if (streak <= 0) return null
+  return (
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30">
+      <FiAward className="w-3.5 h-3.5 text-amber-400" />
+      <span className="text-xs font-semibold text-amber-400">{streak} day streak</span>
+    </div>
+  )
+}
+
 // ──────── Calendar Grid ────────
 function CalendarGrid({ selectedDate, onSelect, mealsByDate, calorieTarget }: { selectedDate: string; onSelect: (d: string) => void; mealsByDate: Record<string, MealEntry[]>; calorieTarget: number }) {
   const [viewDate, setViewDate] = useState<Date | null>(null)
@@ -439,6 +568,7 @@ export default function Page() {
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [goals, setGoals] = useState<Goals>(DEFAULT_GOALS)
   const [steps, setSteps] = useState(0)
+  const [waterGlasses, setWaterGlasses] = useState(0)
   const [manualStepInput, setManualStepInput] = useState('')
 
   // ──── UI State ────
@@ -500,6 +630,11 @@ export default function Page() {
         const parsed = JSON.parse(savedSteps)
         if (typeof parsed === 'number') setSteps(parsed)
       }
+      const savedWater = localStorage.getItem(LS_WATER)
+      if (savedWater) {
+        const parsed = JSON.parse(savedWater)
+        if (typeof parsed === 'number') setWaterGlasses(parsed)
+      }
     } catch (e) { /* ignore parse errors */ }
   }, [])
 
@@ -507,6 +642,7 @@ export default function Page() {
   useEffect(() => { try { localStorage.setItem(LS_MEALS, JSON.stringify(meals)) } catch (e) {} }, [meals])
   useEffect(() => { try { localStorage.setItem(LS_GOALS, JSON.stringify(goals)) } catch (e) {} }, [goals])
   useEffect(() => { try { localStorage.setItem(LS_STEPS, JSON.stringify(steps)) } catch (e) {} }, [steps])
+  useEffect(() => { try { localStorage.setItem(LS_WATER, JSON.stringify(waterGlasses)) } catch (e) {} }, [waterGlasses])
 
   // ──── Computed ────
   const [todayStr, setTodayStr] = useState('')
@@ -642,6 +778,8 @@ export default function Page() {
         items: Array.isArray(m.analysis?.food_items) ? m.analysis.food_items.map(f => f.name).join(', ') : '',
       })),
       steps: displaySteps,
+      water_glasses: sampleMode ? 5 : waterGlasses,
+      water_goal: goals.waterGoal,
       calorie_goal: goals.calorieTarget,
       step_goal: goals.stepGoal,
       macro_targets: macroTargets,
@@ -720,6 +858,33 @@ export default function Page() {
     }
   }, [manualStepInput])
 
+  // ──── Export Summary ────
+  const [exportCopied, setExportCopied] = useState(false)
+  const handleExportSummary = useCallback(() => {
+    const lines = [
+      `NutriSnap Daily Summary - ${currentDate || todayStr}`,
+      `${'='.repeat(40)}`,
+      ``,
+      `Calories: ${todayCalories} / ${goals.calorieTarget} cal`,
+      `Protein: ${Math.round(todayProtein)}g | Carbs: ${Math.round(todayCarbs)}g | Fat: ${Math.round(todayFat)}g`,
+      `Steps: ${displaySteps.toLocaleString()} / ${goals.stepGoal.toLocaleString()}`,
+      `Water: ${waterGlasses} / ${goals.waterGoal} glasses`,
+      ``,
+      `Meals (${todayMeals.length}):`,
+      ...todayMeals.map((m, i) => {
+        const items = Array.isArray(m.analysis?.food_items) ? m.analysis.food_items.map(f => f.name).join(', ') : ''
+        return `  ${i + 1}. ${m.category} @ ${m.time} - ${items} (${m.analysis?.total_calories ?? 0} cal)`
+      }),
+      ``,
+      `Generated by NutriSnap`,
+    ]
+    const text = lines.join('\n')
+    navigator.clipboard.writeText(text).then(() => {
+      setExportCopied(true)
+      setTimeout(() => setExportCopied(false), 2500)
+    }).catch(() => {})
+  }, [currentDate, todayStr, todayCalories, todayProtein, todayCarbs, todayFat, displaySteps, waterGlasses, todayMeals, goals])
+
   // ──── History Date Selection ────
   const historyDateMeals = useMemo(() => {
     return (mealsByDate[selectedHistoryDate] ?? [])
@@ -756,16 +921,19 @@ export default function Page() {
                 <h1 className="text-2xl font-bold tracking-tight">{greeting || 'Welcome'}</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">{currentDate}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="sample-toggle" className="text-xs text-muted-foreground">Sample</Label>
-                <Switch id="sample-toggle" checked={sampleMode} onCheckedChange={setSampleMode} />
+              <div className="flex items-center gap-3">
+                <StreakBadge mealsByDate={mealsByDate} todayStr={todayStr} />
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="sample-toggle" className="text-xs text-muted-foreground">Demo</Label>
+                  <Switch id="sample-toggle" checked={sampleMode} onCheckedChange={setSampleMode} />
+                </div>
               </div>
             </div>
           </div>
 
           {/* ──── DASHBOARD TAB ──── */}
           {activeTab === 'dashboard' && (
-            <div className="px-5 space-y-5">
+            <div className="px-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               {/* Metric Tiles */}
               <div className="grid grid-cols-4 gap-2.5">
                 <MetricTile icon={<RiFireLine className="w-4 h-4 text-orange-400" />} label="Calories" value={todayCalories} target={goals.calorieTarget} unit="cal" color="hsl(25, 95%, 53%)" />
@@ -786,6 +954,17 @@ export default function Page() {
                   <MacroBar label="Fat" value={todayFat} max={macroTargets.fat} color="hsl(25, 95%, 53%)" />
                 </CardContent>
               </Card>
+
+              {/* Water Tracker */}
+              <WaterTracker
+                glasses={sampleMode ? 5 : waterGlasses}
+                goal={goals.waterGoal}
+                onAdd={() => setWaterGlasses(prev => prev + 1)}
+                onRemove={() => setWaterGlasses(prev => Math.max(0, prev - 1))}
+              />
+
+              {/* Weekly Trend */}
+              <WeeklyTrendChart mealsByDate={mealsByDate} calorieTarget={goals.calorieTarget} todayStr={todayStr} />
 
               {/* Today's Meals */}
               <div>
@@ -842,6 +1021,13 @@ export default function Page() {
                 </Button>
               </div>
 
+              {/* Export Summary */}
+              {todayMeals.length > 0 && (
+                <Button onClick={handleExportSummary} variant="outline" className="w-full h-10 border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200 text-xs">
+                  {exportCopied ? <><FiCheck className="w-3.5 h-3.5 mr-2 text-accent" /> Copied to clipboard</> : <><FiCopy className="w-3.5 h-3.5 mr-2" /> Export Daily Summary</>}
+                </Button>
+              )}
+
               {/* Agent Status */}
               <Card className="bg-card border border-border shadow-md">
                 <CardContent className="p-4">
@@ -869,7 +1055,7 @@ export default function Page() {
 
           {/* ──── HISTORY TAB ──── */}
           {activeTab === 'history' && (
-            <div className="px-5 space-y-5">
+            <div className="px-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <h2 className="text-lg font-bold tracking-tight">History</h2>
               <Card className="bg-card border border-border shadow-md">
                 <CardContent className="p-4">
@@ -918,6 +1104,23 @@ export default function Page() {
                         <Progress value={Math.min((historyDateCalories / goals.calorieTarget) * 100, 100)} className="h-2" />
                       </div>
 
+                      {/* Photo Gallery */}
+                      {historyDateMeals.some(m => m.photoUrl) && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Photos</h4>
+                          <div className="grid grid-cols-3 gap-2">
+                            {historyDateMeals.filter(m => m.photoUrl).map(meal => (
+                              <div key={meal.id + '-photo'} className="aspect-square rounded-xl overflow-hidden border border-border bg-muted relative group">
+                                <img src={meal.photoUrl} alt="" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-1.5">
+                                  <span className="text-[9px] text-white font-medium">{meal.analysis?.total_calories ?? 0} cal</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <Separator className="bg-border" />
 
                       {/* Meals List */}
@@ -948,7 +1151,7 @@ export default function Page() {
 
           {/* ──── PROFILE TAB ──── */}
           {activeTab === 'profile' && (
-            <div className="px-5 space-y-5">
+            <div className="px-5 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <h2 className="text-lg font-bold tracking-tight">Settings</h2>
 
               {/* Calorie Target */}
@@ -997,20 +1200,39 @@ export default function Page() {
                 </CardContent>
               </Card>
 
+              {/* Water Goal */}
+              <Card className="bg-card border border-border shadow-md">
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2"><FiDroplet className="w-4 h-4 text-blue-400" /> Daily Water Goal</CardTitle>
+                  <CardDescription className="text-xs">Number of glasses (250ml each)</CardDescription>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <Input type="number" min={1} max={20} value={profileForm.waterGoal} onChange={(e) => setProfileForm(prev => ({ ...prev, waterGoal: parseInt(e.target.value) || 8 }))} className="bg-muted border-border text-lg font-semibold" />
+                </CardContent>
+              </Card>
+
               {/* Save */}
               <Button onClick={handleSaveProfile} className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg shadow-emerald-500/20">
                 {profileSaved ? <><FiCheck className="w-4 h-4 mr-2" /> Saved!</> : 'Save Settings'}
               </Button>
 
-              {/* Reset Steps */}
+              {/* Reset Steps & Water */}
               <Card className="bg-card border border-border shadow-md">
-                <CardContent className="p-4">
+                <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold">Reset Today&apos;s Steps</p>
                       <p className="text-xs text-muted-foreground">Current: {steps.toLocaleString()}</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setSteps(0)} className="border-destructive/30 text-red-400 hover:bg-destructive/10">Reset</Button>
+                  </div>
+                  <Separator className="bg-border" />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">Reset Today&apos;s Water</p>
+                      <p className="text-xs text-muted-foreground">Current: {waterGlasses} glasses</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setWaterGlasses(0)} className="border-destructive/30 text-red-400 hover:bg-destructive/10">Reset</Button>
                   </div>
                 </CardContent>
               </Card>
